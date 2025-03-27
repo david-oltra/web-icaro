@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="./output.css" rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="images/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Dots&display=swap" rel="stylesheet">
+  <title>Proyecto Icaro</title>
+  <style>
+    body {
+      font-family: "Zen Dots", sans-serif;
+      font-weight: 400;
+      font-style: normal;
+    }
+    .fadeInOut{
+      animation: fade 0.5s forwards;
+      animation-timeline: scroll();
+      animation-range: 0 500px;
+    }
+    @keyframes fade {
+      0% { opacity: 1;}
+      100% { opacity: 0;}
+    }
+  </style>
+
+  <script type="module">
+
+    const main = document.querySelector('main')
+    const MAX_FRAMES = 500
+
+    // init with the first image
+    const img = document.querySelector('#img')
+
+    // Altura máxima del scroll
+    let maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+
+    window.addEventListener('resize', () => {
+      maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    });
+
+    let lastFrameUpdate = 0
+
+    window.addEventListener('scroll', () => {
+      // Posición actual del scroll
+      const scrollPosition = window.scrollY
+      // Calcular el porcentaje del scroll
+      const scrollFraction = scrollPosition / maxScroll;
+      // ¿Qué frame le toca?
+      const frame = Math.floor(scrollFraction * MAX_FRAMES) || 1
+      // nos evitemos algo de trabajo cuando
+      // al hacer scroll, el frame que le toca es el mismo
+      // que ya tenía
+        const id = frame.toString().padStart(3,'0')
+        img_anim.src = `frames/background_${id}.webp`
+
+      if (currentFrame !== frame) {
+        // creamos el id del nombre del archivo
+        updateImage(frame)
+        currentFrame = frame
+      }
+    });
+  </script>
+
+  <!-- Script de precarga -->
+  <script>
+    // Función para rellenar con ceros (ej: 1 → "001")
+    function padNumber(num, size = 3) {
+      return num.toString().padStart(size, '0');
+    }
+
+    // Precarga de imágenes
+    async function preloadImages() {
+      const imageBasePath = 'frames/background_';
+      const totalImages = 500;
+      const batchSize = 50; // Lotes de 10 imágenes
+      const container = document.getElementById('img_anim');
+
+      for (let i = 1; i <= totalImages; i += batchSize) {
+        const batchPromises = [];
+        
+        // Crear un lote de imágenes
+        for (let j = i; j < i + batchSize && j <= totalImages; j++) {
+          const imageUrl = `${imageBasePath}${padNumber(j)}.webp`;
+          batchPromises.push(
+            new Promise((resolve) => {
+              const img = new Image();
+              img.src = imageUrl;
+              img.onload = () => {
+                console.log(`✅ Imagen cargada: ${imageUrl}`);
+                // Opcional: Mostrar imágenes en el DOM
+                if (container) {
+                  const imgElement = document.createElement('img');
+                  imgElement.src = imageUrl;
+                  imgElement.alt = `Frame ${j}`;
+                  imgElement.style.width = '100px';
+                  container.appendChild(imgElement);
+                }
+                resolve(img);
+              };
+              img.onerror = () => {
+                console.error(`❌ Error al cargar: ${imageUrl}`);
+                resolve(null);
+              };
+            })
+          );
+        }
+
+        await Promise.all(batchPromises);
+        console.log(`📦 Lote ${Math.ceil(i / batchSize)} completado`);
+      }
+    }
+
+    // Iniciar la precarga cuando la página esté lista
+    window.addEventListener('DOMContentLoaded', preloadImages);
+  </script>
+</head>
+
+
+<body class="bg-black text-gray-400 w-[90vw] mx-auto flex items-center justify-center font-[]">
+  <main class="min-h-[300dvh]">
+    <header class="relative top-0 mr-[10%] flex justify-end t fadeInOut">
+        <div class="text-3xl mt-10 "><h1 class="hover:text-lime-50">PROYECTO ICARO</h1></div>
+      <img class="w-[100px] md:w-[200px] mt-10 md:mt-0 m-0 mb-[50px] mr-0 " 
+      src="images/logo.webp" alt="Logo proyecto Icaro" />
+    </header>
+
+    <div class="fixed w-[60vw] top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 -z-10  flex items-center justify-center ">
+      <img id="img_anim" src="frames/background_001.webp" alt="imagen pcb render">
+    </div>
+
+    <div class="relative w-[80vw]  grid grid-cols-2 gap-20 justify-items-center fadeInOut">
+        <div class="w-60 p-6 text-center content-center hover:text-lime-50 grid place-items-center"><h3>GLOBO ESTRATOSFERICO</h3>
+          <svg  xmlns="http://www.w3.org/2000/svg"  width="55"  height="55"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-air-balloon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 19m0 1a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v1a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1z" /><path d="M12 16c3.314 0 6 -4.686 6 -8a6 6 0 1 0 -12 0c0 3.314 2.686 8 6 8z" /><path d="M12 9m-2 0a2 7 0 1 0 4 0a2 7 0 1 0 -4 0" /></svg>
+        </div>
+        <div class="w-60 p-6 text-center content-center hover:text-lime-50 grid place-items-center"><h3>COMUNICACION LoRa</h3>
+          <svg  xmlns="http://www.w3.org/2000/svg"  width="55"  height="55"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-router"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 13m0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z" /><path d="M17 17l0 .01" /><path d="M13 17l0 .01" /><path d="M15 13l0 -2" /><path d="M11.75 8.75a4 4 0 0 1 6.5 0" /><path d="M8.5 6.5a8 8 0 0 1 13 0" /></svg>
+        </div>  
+        <div class="w-60 p-6 text-center content-center hover:text-lime-50 grid place-items-center"><h3>STREAMING DE VIDEO</h3>
+          <svg  xmlns="http://www.w3.org/2000/svg"  width="55"  height="55"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-video"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 10l4.553 -2.276a1 1 0 0 1 1.447 .894v6.764a1 1 0 0 1 -1.447 .894l-4.553 -2.276v-4z" /><path d="M3 6m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z" /></svg>
+        </div>
+        <div class="w-60 p-6 text-center content-center hover:text-lime-50 grid place-items-center"><h3>RADIO</h3>
+          <svg  xmlns="http://www.w3.org/2000/svg"  width="55"  height="55"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-building-broadcast-tower"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M16.616 13.924a5 5 0 1 0 -9.23 0" /><path d="M20.307 15.469a9 9 0 1 0 -16.615 0" /><path d="M9 21l3 -9l3 9" /><path d="M10 19h4" /></svg>
+        </div>
+    </div>
+
+    <div class="fixed left-[50%] bottom-0 w-auto fadeInOut" >
+      <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-down"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M18 13l-6 6" /><path d="M6 13l6 6" /></svg>
+    </div>
+
+    <div class="relative mt-[300dvh] mb-40 w-[80vw] leading-relaxed">
+      <h1 class="p-5 font-bold text-2xl">Ícaro's Sensor Box</h1>
+      <p class="p-4">Desarrollo de uno de los equipos que van a ser lanzados en el proyecto Ícaro, un proyecto organizado y retransmitido por @Araba_ST y @Labgluon en Twitch.</p>
+      <p class="p-4 ml-5 border-l-2">El proyecto Ícaro busca lanzar un globo estratosférico (hasta unos 20-30km de altura), subiendo varios equipos, entre ellos: Uno de radioafionados con APRS y Repetidor U/V, y nuestro equipo de sensores.</p>
+      <p class="p-4">Nuestro objetivo es aprender a desarrollar equipos más complejos, a lo que sumamos la dificultad de ser el primer proyecto realizado en comunidad con la gente de <a href="https://www.twitch.tv/labgluon">www.twitch.tv/labgluon</a>. Añadiendo la incertidumbre de gestionar equipos remotos y que no han trabajado nunca juntos..</p>
+    </div>
+
+    <div class="relative text-center">POLE</div>
+  </main>
+  
+
+</body>
+
+</html>
