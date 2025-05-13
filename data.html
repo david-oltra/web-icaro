@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="images/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Dots&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>Proyecto Icaro</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background-color:#282828; color:gray;}
+        .packet { background: #3d3d3d; margin-bottom: 20px; margin-top: 20px; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .data-display { background: #f8f9fa; padding: 10px; border-radius: 4px; margin: 10px 0; font-family: 'Courier New', monospace; }
+        .raw-data { display: none; background: #e9ecef; padding: 10px; border-radius: 4px; margin-top: 10px; }
+        .show-raw { color: #0d6efd; cursor: pointer; font-size: 0.9em; }
+        .error { color: #dc3545; background: #f8d7da; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>🎈 Datos en vivo de DJ2DS-L2</h1>
+    <div id="status">Estado: Cargando...</div>
+     <div class="chart-container">
+        <canvas id="altitudeChart"></canvas>
+        <script>
+        // Configuración
+        const SATELLITE = 'DJ2DS-L2';
+        const API_URL = `https://api.tinygs.com/v2/packets?satellite=${SATELLITE}&limit=100`;
+        
+        // Variables para los datos
+        let timestamps = [];
+        let altitudes = [];
+        
+        // Elementos del DOM
+        const statusElement = document.getElementById('status');
+        const ctx = document.getElementById('altitudeChart').getContext('2d');
+        
+        // Crear gráfico
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: timestamps,
+                datasets: [{
+                    label: 'Altitud (km)',
+                    data: altitudes,
+                    borderColor: '#3a86ff',
+                    backgroundColor: 'rgba(58, 134, 255, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        title: {
+                            display: true,
+                            text: 'Altitud (km)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Hora de recepción'
+                        },
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Altitud: ${context.parsed.y.toFixed(2)} km`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Función para cargar datos
+        async function loadData() {
+            try {
+                statusElement.textContent = "🔄 Cargando datos...";
+                
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+                
+                const data = await response.json();
+                if (!data.packets || !Array.isArray(data.packets)) {
+                    throw new Error("Formato de datos inválido");
+                }
+
+                // Procesar datos
+                const validPackets = data.packets.filter(p => 
+                    p.parsed?.payload?.tinygsAlt !== undefined && 
+                    p.parsed?.payload?.pckTime
+                );
+
+                if (validPackets.length === 0) {
+                    throw new Error("No se encontraron datos de altitud válidos");
+                }
+
+                // Limpiar arrays
+                timestamps = [];
+                altitudes = [];
+
+                // Llenar con datos válidos
+                validPackets.forEach(packet => {
+                    timestamps.push(packet.parsed.payload.pckTime);
+                    altitudes.push(parseFloat(packet.parsed.payload.tinygsAlt));
+                });
+
+                // Actualizar gráfico
+                chart.data.labels = timestamps;
+                chart.data.datasets[0].data = altitudes;
+                chart.update();
+                
+                statusElement.textContent = `✅ ${validPackets.length} puntos de altitud cargados`;
+                
+            } catch (error) {
+                statusElement.textContent = `❌ Error: ${error.message}`;
+                console.error("Error al cargar datos:", error);
+            }
+        }
+
+        // Cargar datos al iniciar y cada 1 minuto
+        loadData();
+        setInterval(loadData, 60000);
+    </script>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="temperatureChart"></canvas>
+        <script>
+        
+        // Variables para los datos
+        let temperatures = [];
+        
+        // Elementos del DOM
+        const temperatureCtx = document.getElementById('temperatureChart').getContext('2d');
+        
+        // Crear gráfico
+        const temperatureChart = new Chart(temperatureCtx, {
+            type: 'line',
+            data: {
+                labels: timestamps,
+                datasets: [{
+                    label: 'Temperature)',
+                    data: altitudes,
+                    borderColor: '#3a86ff',
+                    backgroundColor: 'rgba(58, 134, 255, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        title: {
+                            display: true,
+                            text: 'Temperature'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Hora de recepción'
+                        },
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Temperature: ${context.parsed.y.toFixed(2)} ºc`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Función para cargar datos
+        async function loadData() {
+            try {
+                statusElement.textContent = "🔄 Cargando datos...";
+                
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+                
+                const data = await response.json();
+                if (!data.packets || !Array.isArray(data.packets)) {
+                    throw new Error("Formato de datos inválido");
+                }
+
+                // Procesar datos
+                const validPackets = data.packets.filter(p => 
+                    p.parsed?.payload?.tinygsTemp !== undefined && 
+                    p.parsed?.payload?.pckTime
+                );
+
+                if (validPackets.length === 0) {
+                    throw new Error("No se encontraron datos de altitud válidos");
+                }
+
+                // Limpiar arrays
+                timestamps = [];
+                temperatures = [];
+
+                // Llenar con datos válidos
+                validPackets.forEach(packet => {
+                    timestamps.push(packet.parsed.payload.pckTime);
+                    temperatures.push(parseFloat(packet.parsed.payload.tinygsTemp));
+                });
+
+                // Actualizar gráfico
+                temperatureChart.data.labels = timestamps;
+                temperatureChart.data.datasets[0].data = temperatures;
+                temperatureChart.update();
+                
+                statusElement.textContent = `✅ ${validPackets.length} puntos de temperatura cargados`;
+                
+            } catch (error) {
+                statusElement.textContent = `❌ Error: ${error.message}`;
+                console.error("Error al cargar datos:", error);
+            }
+        }
+
+        // Cargar datos al iniciar y cada 1 minuto
+        loadData();
+        setInterval(loadData, 60000);
+    </script>
+    </div>
+
+
+    <div id="packets-container"></div>
+
+    <script>
+        // Configuración
+        // const SATELITE = 'DJ2DS-L2';
+        // const API_URL = `https://api.tinygs.com/v2/packets?satellite=${SATELITE}&limit=10`;
+
+        // // Variables para los datos
+        // let timestamps = [];
+        // let altitudes = [];
+
+        // Función principal
+        async function loadData() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+                
+                const data = await response.json();
+                console.log("Datos recibidos:", data); // Para depuración
+                
+                if (!data?.packets?.length) {
+                    throw new Error("No hay paquetes disponibles");
+                }
+                
+                displayPackets(data.packets);
+                document.getElementById('status').textContent = `✅ Datos actualizados: ${new Date().toLocaleTimeString()}`;
+                
+            } catch (error) {
+                console.error("Error:", error);
+                document.getElementById('status').textContent = `❌ Error: ${error.message}`;
+                document.getElementById('packets-container').innerHTML = `
+                    <div class="error">
+                        <p>No se pudieron cargar los datos</p>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Mostrar paquetes
+        function displayPackets(packets) {
+            const container = document.getElementById('packets-container');
+            container.innerHTML = '';
+            
+            packets.forEach(packet => {
+                const packetElement = document.createElement('div');
+                packetElement.className = 'packet';
+                
+                const date = packet.parsed.payload.pckTime;
+                const altitude = packet.parsed.payload.tinygsAlt;
+                const heading = packet.parsed.payload.tinygsHeading;
+                const latitude = packet.parsed.payload.tinygsLat;
+                const longitude = packet.parsed.payload.tinygsLng;
+                const frame = packet.parsed.payload.pckCount;
+                const txPower = packet.parsed.payload.tinygsTxpower;
+                const mainVoltage = packet.parsed.payload.tinygsMainVoltage;
+                const solarVoltage = packet.parsed.payload.tinygsSolarVoltage;
+                const temperature = packet.parsed.payload.tinygsTemp;
+
+
+                // Fecha estacion formateada
+                const stationDate = packet.serverTime ? 
+                    new Date(packet.serverTime).toLocaleString() : 'Fecha desconocida';
+                
+                // Datos principales (asegurando que siempre se muestren)
+                let mainData = 'Datos no disponibles';
+                if (packet.parsed.payload.tinygsAlt) {
+                    mainData = packet.parsed.payload.tinygsAlt.length > 100 ? 
+                        packet.parsed.payload.tinygsAlt.substring(0, 100) + '...' : 
+                        "📻 "+txPower+"mW 🔋"+mainVoltage +"V ☀️"+solarVoltage+"V 🌡"+temperature+"ºC <br>"+
+                        "Frame: "+frame+" Alt:"+altitude+"m 🧭"+heading+"º 🗺🎈["+latitude+","+longitude+"]"
+                }
+
+                // Datos adicionales
+                let footData = "Mode: " + packet.mode + " Freq: " + packet.freq + " SF: " + packet.sf + " BW: " + packet.bw;
+                
+                // // Estación
+                // const stationDate = packet.serverTime || 'Fecha desconocida';
+                
+                // Datos crudos
+                const rawData = JSON.stringify(packet, null, 2);
+                
+                packetElement.innerHTML = `
+                    <h3>📅 ${stationDate}</h3>
+                    <div class="data-display">
+                        <strong>Datos recibidos:</strong>
+                        <div>${mainData}</div>
+                    </div>
+                    <footer>📡 ${footData}</footer>
+                <!--    
+                    <div class="show-raw" onclick="this.nextElementSibling.style.display='block'">▼ Mostrar datos completos</div>
+                    <pre class="raw-data">${rawData}</pre>
+                -->
+                `;
+                
+                container.appendChild(packetElement);
+            });
+        }
+
+        // Cargar datos cada minuto
+        loadData();
+        setInterval(loadData, 60000);
+    </script>
+</body>
+</html>
